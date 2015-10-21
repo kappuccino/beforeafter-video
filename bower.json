@@ -1,0 +1,27 @@
+{
+  "name": "beforeafter-video",
+  "description": "",
+  "keywords": [
+    "webcomponents",
+    "web-components",
+    "polymer",
+    "polymerjs",
+    "polymer-js",
+    "video",
+    "video-html5",
+    "video-player",
+    "videosync",
+    "video-sync"
+  ],
+  "main": [
+    "beforeafter-video.html"
+  ],
+  "ignore": [
+    "**/.*",
+    "**/*.json"
+  ],
+  "license": "http://www.wtfpl.net/about/",
+  "author": {
+    "name": "Benjamin Mosnier"
+  }
+}

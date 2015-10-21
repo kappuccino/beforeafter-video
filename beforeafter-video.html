@@ -1,0 +1,337 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="style.css" />
+
+<script src="http://popcornjs.org/code/dist/popcorn-complete.min.js"></script>
+<script src="../nouislider/distribute/nouislider.min.js"></script>
+
+
+<dom-module id="beforeafter-video">
+
+    <template>
+
+        <div id="wrapper-container">
+            <content select="img"></content>
+
+             <section id="wrapper">
+                <div id="slider-wrapper">
+                    <div id="slider"></div>
+                </div>
+
+                <div id="vertical">
+                    <b>
+                        <i class="fa fa-hand-rock-o"></i>
+                        <i class="fa fa-hand-paper-o"></i>
+                    </b>
+                </div>
+
+                <div id="wrapper-a" class="video">
+                    <content select="video.above"></content>
+                </div>
+
+                <div id="wrapper-b" class="video">
+                    <content select="video.under"></content>
+                </div>
+            </section>
+
+        </div>
+
+        <div id="controls">
+
+            <div id="bars">
+                <div id="progress"></div>
+            </div>
+
+            <span id="player">
+                <span class="play"><i class="fa fa-play"></i></span>
+                <span class="pause"><i class="fa fa-pause"></i></span>
+            </span>
+
+            <div id="times">
+                <span id="time"></span> /
+                <span id="duration"></span>
+            </div>
+
+
+        </div>
+        </div>
+
+    </template>
+
+    <script>
+    (function(){
+
+        var a, b
+          , time
+          , player
+          , duration
+          , progress
+          , controls
+          , slider
+          , vertical
+          , wrapper
+          , medias
+          , reducer
+          , events = "play pause playing timeupdate seeking".split(/\s+/g);
+
+        Polymer({
+            is: 'beforeafter-video',
+
+            properties: {
+                loadCount: {type: Number, value: 0},
+                length: {type: Number, value: 0},
+                ratio: {type: Number},
+                value: {type: Number}
+            },
+
+            detached: function(){
+                player.removeEventListener('click', this.togglePlayPause);
+            },
+
+            attached: function(){
+
+                a = this.$['wrapper-a'];
+                b = this.$['wrapper-b'];
+
+                //console.log(a, this.$['wrapper-a'].querySelector('video'))
+                //console.log(b, this.$['wrapper-b'].querySelector('video'))
+
+                time = this.$.time;
+                player = this.$.player;
+                duration = this.$.duration;
+                progress = this.$.progress;
+                controls = this.$.controls;
+                slider = this.$.slider;
+                vertical = this.$.vertical;
+                wrapper = this.$.wrapper;
+                reducer = this.$.reducer;
+                medias = {
+                    a: Popcorn(this.$['wrapper-a'].querySelector('video')),
+                    b: Popcorn(this.$['wrapper-b'].querySelector('video'))
+                };
+
+                player.addEventListener('click', this.togglePlayPause);
+                window.addEventListener('resize', this.updateDisplay.bind(this), false);
+
+                var sizes = this.videoSize();
+                this.ratio = sizes[1] / sizes[0];
+
+                //this.fixSizes();
+
+                this.updateDisplay();
+                this.setCurrent(0);
+                this.updatePlayer(false);
+                this.createSlider();
+                this.initPopCorn();
+            },
+
+            addEvent: function(object, type, callback) {
+                if (object == null || typeof(object) == 'undefined') return;
+                if (object.addEventListener) {
+                    object.addEventListener(type, callback, false);
+                } else if (object.attachEvent) {
+                    object.attachEvent("on" + type, callback);
+                } else {
+                    object["on"+type] = callback;
+                }
+            },
+
+            videoSize: function(){
+                var v = this.$['wrapper-b'].querySelector('video');
+                var x = [v.offsetWidth, v.offsetHeight];
+                return x;
+            },
+
+            videoRealSize: function(){
+                var v = this.$['wrapper-b'].querySelector('video');
+                var x = [v.getAttribute('width'), v.getAttribute('height')];
+                return x;
+            },
+
+            fixSizes: function(){
+
+
+                var videoA = this.$['wrapper-a'].querySelector('video')
+                  , videoB = this.$['wrapper-b'].querySelector('video')
+                  , sizes = this.videoSize()
+                  , width = this.clientWidth
+                  , next;
+
+                next = sizes;
+                if(width < sizes[0]) next = [width, this.ratio * width];
+
+                /*console.log('fixSizes() called');
+                console.log('sizes', sizes);
+                console.log('ratio', this.ratio);
+                console.log('next', next);
+                console.log('next', this);*/
+
+                wrapper.style.width  = next[0]+'px';
+                wrapper.style.height = next[1]+'px';
+
+                videoA.style.width  = next[0]+'px';
+                videoA.style.height = next[1]+'px';
+
+                videoB.style.width  = next[0]+'px';
+                videoB.style.height = next[1]+'px';
+            },
+
+            initPopCorn: function(){
+                var self = this;
+
+                // iterate both media sources
+                Popcorn.forEach(medias, function(media, type){
+
+                    // when each is ready...
+                    media.on("canplayall", function(){
+
+                        self.setLength(medias.a.duration());
+                        self.allowControls();
+
+                        // trigger a custom "sync" event
+                        this.emit("sync");
+
+                        // Listen for the custom sync event...
+                    })
+
+                    .on("sync", function(){
+
+                        // Once both items are loaded, sync events
+                        if(++self.loadCount == 2){
+
+                            // Uncomment this line to silence the video
+                            //medias.b.video.mute();
+
+                            // Iterate all events and trigger them on the video whenever they occur on the audio
+                            events.forEach(function(event){
+
+                                medias.a.on(event, function(){
+
+                                    // Avoid overkill events, trigger timeupdate manually
+                                    if(event === "timeupdate"){
+
+                                        self.setCurrent(medias.a.currentTime());
+
+                                        if(!this.media.paused) return;
+                                        medias.b.emit("timeupdate");
+                                        return;
+                                    }
+
+                                    if(event === "seeking") medias.b.currentTime(this.currentTime());
+
+                                    if(event == 'playing') self.updatePlayer(true);
+                                    if(event == 'pause')   self.updatePlayer(false);
+
+                                    if(event === "play" || event === "pause") medias.b[event]();
+
+                                });
+                            });
+                        }
+                    });
+                });
+            },
+
+
+            updateDisplay: function(){
+
+                var value = this.value || 0
+                  , sizes = this.videoSize()
+                  , clip = Math.round(sizes[0] * (value / 100));
+
+
+                // Spécifie une forme du type rect(<haut>, <droite>, <bas>, <gauche>);
+
+                // a.style.width = Math.round(this.videoSize()[0] * (value / 100)) + 'px';
+                // querySelector('video').
+                     //a.style.clip = 'rect(0px, 0px, '+ sizes[1] +'px, '+ clip +'px)';
+
+                a.style.clip = 'rect(0, '+clip+'px, '+sizes[1]+'px, 0)';
+
+                //console.log(a.style.clip);
+
+                vertical.style.left = value+'%';
+            },
+
+
+
+            setValue: function(value){
+              this.value = value;
+            },
+
+            setCurrent: function(val){
+                var percentage = (val / this.length).toFixed(2) * 100;
+                time.innerHTML = this.secondToTimecode(val);
+                if(Number(percentage)) this.updateProgress(percentage);
+            },
+
+            setLength: function(val){
+                this.length = val;
+                duration.innerHTML = this.secondToTimecode(this.length);
+            },
+
+            updatePlayer: function(playing){
+                player.className = (playing) ? 'pause' : 'play';
+            },
+
+            updateProgress: function(percent){
+                progress.style.width = percent+'%';
+            },
+
+            allowControls: function(){
+                controls.style.visibility = 'visible';
+                controls.className = 'allowed';
+            },
+
+            togglePlayPause: function(){
+                medias.a.paused() ? medias.a.media.play() : medias.a.media.pause();
+            },
+
+            secondToTimecode: function(duration){
+
+                var seconds, minuts;
+
+                duration = Math.round(parseFloat(duration));
+                seconds = duration % 60;
+                minuts = Math.floor(duration / 60);
+
+                return minuts+':'+seconds;
+            },
+
+            updateSliding: function(working){
+                wrapper.className = working ? 'sliding' : '';
+            },
+
+            createSlider: function(){
+
+                var first = false
+                  , self = this;
+
+                noUiSlider.create(slider, {
+                    start: 0,
+                    connect: "lower",
+                    range: {
+                        min: 0,
+                        max: 100
+                    }
+                });
+
+                slider.noUiSlider.on('update', function(){
+                    self.setValue(slider.noUiSlider.get());
+
+                    self.updateDisplay();
+                    if(!first) return first = true;
+                    self.updateSliding(true);
+                });
+
+                slider.noUiSlider.on('change', function(){
+                    self.updateSliding(false);
+                });
+            }
+
+
+        });
+
+    })();
+    </script>
+
+</dom-module>

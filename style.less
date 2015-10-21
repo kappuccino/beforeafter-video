@@ -1,0 +1,186 @@
+:host {
+	display: block;
+	position: relative;
+	font-family: Arial;
+
+	*{
+		user-select: none;
+	}
+
+	::content img{
+		display: block;
+	}
+}
+
+// Contient  le #wrapper + img responsive
+#wrapper-container{
+	position: relative;
+	background: orangered;
+
+	& > img{
+		display: block;
+		width: 100%;
+		height: auto;
+		background: #E8FF00;
+	}
+}
+
+// Contient les 2 video
+#wrapper{
+	position: absolute;
+	top: 0; right: 0; bottom: 0; left: 0;
+	padding: 0;
+	margin: 0;
+	overflow: visible;
+
+	&.sliding{
+		.fa-hand-rock-o{
+			display: block;
+		}
+		.fa-hand-paper-o{
+			display: none;
+		}
+	}
+
+	.fa-hand-rock-o{
+		display: none;
+	}
+	.fa-hand-paper-o{
+		display: block;
+	}
+}
+
+.video{
+	width: 100%;
+	height: auto;
+	overflow: hidden;
+}
+
+video{
+	width: 100%;
+	height: auto;
+}
+
+
+#wrapper-a,
+#wrapper-b{
+	position: absolute;
+}
+
+#wrapper-a{
+	z-index: 10;
+}
+
+#wrapper-b{
+	z-index: 5;
+}
+
+#controls{
+	background: #000;
+	color: #FFF;
+	line-height: 30px;
+	visibility: hidden;
+	opacity: 0;
+	transition: opacity 250ms;
+
+	&.allowed{
+		opacity: 1;
+	}
+}
+
+#bars{
+	background: #4d4d4d;
+}
+
+#progress{
+	height: 3px;
+	width: 0;
+	background: deepskyblue;
+}
+
+#player{
+	cursor: pointer;
+	display: inline-block;
+	width: 30px;
+	text-align: center;
+
+	&.pause .play{
+		display: none;
+	}
+
+	&.play .pause{
+		display: none;
+	}
+}
+
+#times{
+	display: inline-block;
+}
+
+
+#slider-wrapper{
+	position: absolute;
+	z-index: 666;
+	top: 50%; right: 0; left: 0;
+	//transform: translate(0, -50%);
+
+	#slider{
+		//visibility: hidden;
+	}
+}
+
+#vertical{
+	position: absolute;
+	top: 0; bottom: 0;
+	transform: translate(-50%, 0);
+	z-index: 500;
+	width: 30px;
+
+	&::before,
+	&::after{
+		position: absolute;
+		content: ' ';
+		display: block;
+		width: 2px;
+		background: #FFF;
+		left: 50%;
+	}
+
+	&::before{
+		top: 0;
+		bottom: ~"calc(50% + 20px)";
+		background: linear-gradient(to top,  rgba(255,255,255,1) 87%,rgba(255,255,255,0) 100%); /* W3C */
+	}
+
+	&::after{
+		top: ~"calc(50% + 20px)";
+		bottom: 0;
+		background: linear-gradient(to bottom,  rgba(255,255,255,1) 87%,rgba(255,255,255,0) 100%); /* W3C */
+	}
+
+	b{
+		display: block;
+		width: 40px;
+		height: 40px;
+		background: rgba(0, 0, 0, 0.5);
+		border-radius: 50%;
+		border: 2px solid #FFF;
+		position: absolute;
+		top: 50%; left: 50%;
+		transform: translate(-50%, -50%);
+	}
+	i{
+		font-size: 25px;
+		color: #FFF;
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+	}
+}
+
+
+//-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -
+
+
+@import "slider";
